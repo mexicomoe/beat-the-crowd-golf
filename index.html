@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<title>Beat the Crowd · Golf</title>
+<style>
+  /* ============================================================
+     BEAT THE CROWD — GOLF DEMO  (single self-contained file)
+     No backend, no network calls. Runs fully offline after load.
+     Cognizant Classic / PGA National. Real player names (demo).
+     ============================================================ */
+  :root{
+    --navy:#0B2545; --navy2:#13315C;
+    --bg:#EEF3EE; --card:#FFFFFF;
+    --green:#1F7A4D; --green-d:#155C39; --fair:#2E9B63;
+    --sand:#E3CD8F; --gold:#E8A100;
+    --teal:#0A7E8C;
+    --good:#1B8A3A; --bad:#C0392B;
+    --line:#D6E2D8; --muted:#5D6B5F;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--navy); -webkit-font-smoothing:antialiased; line-height:1.4;
+  }
+  body.lock{overflow:hidden;}
+  #app{height:100vh; height:100dvh; display:flex; flex-direction:column; max-width:520px; margin:0 auto; position:relative; overflow:hidden;}
+  .screen{flex:1; display:flex; flex-direction:column; min-height:0;}
+  .content{flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:18px 18px 8px;}
+  .footer{padding:12px 18px calc(12px + env(safe-area-inset-bottom)); background:linear-gradient(to top, var(--bg) 70%, rgba(238,243,238,0)); position:sticky; bottom:0;}
+  h1,h2,h3{margin:0 0 10px; color:var(--navy);}
+  h1{font-size:30px; line-height:1.1; letter-spacing:-.5px;}
+  h2{font-size:22px;} h3{font-size:17px;}
+  p{margin:0 0 12px; color:var(--navy2);}
+  .muted{color:var(--muted); font-size:14px;}
+  .center{text-align:center;}
+  button{font-family:inherit;}
+  .btn{display:block; width:100%; border:none; border-radius:14px; padding:16px 18px; font-size:18px; font-weight:700; background:var(--navy); color:#fff; cursor:pointer; min-height:54px; box-shadow:0 4px 14px rgba(11,37,69,.22); transition:transform .05s ease, opacity .15s;}
+  .btn:active{transform:scale(.985);}
+  .btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none;}
+  .btn.green{background:var(--green); box-shadow:0 4px 14px rgba(31,122,77,.32);}
+  .btn.gold{background:var(--gold); color:#3a2c00;}
+  .btn.ghost{background:#fff; color:var(--navy); border:2px solid var(--line); box-shadow:none;}
+  .btn.sm{padding:11px 14px; font-size:15px; min-height:44px; border-radius:11px;}
+  .card{background:var(--card); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:0 2px 10px rgba(11,37,69,.06); border:1px solid var(--line);}
+  .pill{display:inline-block; padding:3px 10px; border-radius:999px; font-size:12px; font-weight:800; letter-spacing:.4px; text-transform:uppercase;}
+  .pill.green{background:var(--green); color:#eafff3;}
+  .pill.gold{background:var(--gold); color:#3a2c00;}
+  label{display:block; font-weight:700; margin-bottom:6px; font-size:15px;}
+  input[type=text],input[type=number]{width:100%; padding:14px; font-size:17px; border:2px solid var(--line); border-radius:12px; color:var(--navy); background:#fff; min-height:50px;}
+  input:focus{outline:none; border-color:var(--green);}
+  .choices{display:grid; gap:10px;}
+  .choice{border:2px solid var(--line); background:#fff; border-radius:14px; padding:14px 16px; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:16px; color:var(--navy); min-height:54px; text-align:left; width:100%;}
+  .choice.sel{border-color:var(--green); background:#E7F7EE; box-shadow:0 0 0 3px rgba(31,122,77,.18);}
+  .choice.dim{opacity:.45;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .pcard{border:2px solid var(--line); background:#fff; border-radius:13px; padding:11px 13px; display:flex; align-items:center; gap:11px; cursor:pointer; min-height:54px; width:100%; text-align:left;}
+  .pcard.sel{border-color:var(--green); background:#E7F7EE;}
+  .pcard.dim{opacity:.4;}
+  .pcard .wr{width:34px; height:34px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:13px; color:#fff; background:var(--green);}
+  .pcard .pname{font-weight:700; font-size:15px; color:var(--navy);}
+  .pcard .pmeta{font-size:12px; color:var(--muted);}
+  .pcard .form{margin-left:auto; font-size:12px; color:var(--muted); text-align:right; font-weight:700;}
+  .grphdr{font-size:13px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin:16px 0 8px;}
+  .tier{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px;}
+  .countbar{position:sticky; top:0; background:var(--bg); padding:8px 0 6px; z-index:2; font-weight:800; font-size:14px; color:var(--navy);}
+  .scoreboard{background:linear-gradient(135deg,var(--green-d),var(--teal)); color:#fff; border-radius:18px; padding:16px; margin-bottom:14px; box-shadow:0 6px 18px rgba(21,92,57,.3);}
+  .sb-row{display:flex; align-items:center; justify-content:space-between;}
+  .sb-lab{font-size:12px; font-weight:800; letter-spacing:.6px; opacity:.9; text-transform:uppercase;}
+  .sb-pts{font-size:50px; font-weight:900; line-height:1; font-variant-numeric:tabular-nums; margin-top:2px;}
+  .sb-right{text-align:right; font-size:12px; opacity:.92;}
+  .sb-hole{font-size:13px; font-weight:800; letter-spacing:.5px;}
+  .feed{display:flex; flex-direction:column; gap:8px;}
+  .play{background:#fff; border:1px solid var(--line); border-radius:12px; padding:11px 13px; font-size:14px; color:var(--navy2); animation:slidein .35s ease;}
+  .play.hi{border-left:5px solid var(--gold); font-weight:600; color:var(--navy);}
+  .play.trap{border-left:5px solid var(--bad); background:#fff7f6;}
+  .play .ptag{font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--muted);}
+  .chip{display:inline-block; min-width:26px; text-align:center; font-weight:900; font-variant-numeric:tabular-nums; border-radius:8px; padding:1px 7px; margin-right:6px;}
+  .chip.under{background:#E7F7EC; color:var(--good);} .chip.over{background:#FDECEC; color:var(--bad);} .chip.even{background:#eef1f6; color:var(--navy);}
+  @keyframes slidein{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+  @keyframes pop{0%{transform:scale(.8);opacity:0;}60%{transform:scale(1.08);}100%{transform:scale(1);opacity:1;}}
+  .toast{background:#FFF8E1; border:1px solid var(--gold); border-radius:12px; padding:10px 13px; font-size:14px; font-weight:600; color:#7a5b00; animation:slidein .3s ease;}
+  .toast.good{background:#E7F7EC; border-color:#9bd9af; color:#0d5c27;}
+  .toast.bad{background:#FDECEC; border-color:#f0b3b3; color:#8a1c1c;}
+  .overlay{position:fixed; inset:0; background:rgba(8,32,20,.62); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
+  .sheet{background:#fff; width:100%; max-width:520px; border-radius:22px 22px 0 0; padding:20px 18px; padding-bottom:calc(20px + env(safe-area-inset-bottom)); max-height:92vh; max-height:92dvh; overflow-y:auto; -webkit-overflow-scrolling:touch; animation:sheetup .28s ease; box-shadow:0 -8px 30px rgba(0,0,0,.3);}
+  @keyframes sheetup{from{transform:translateY(100%);} to{transform:none;}}
+  .sheet h2{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .countdown{font-weight:900; font-size:15px; color:var(--gold); margin-left:auto;}
+  .skinrow{display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:11px; margin-bottom:6px; background:#fff; border:1px solid var(--line);}
+  .skinrow.champ{background:#E7F7EE; border-color:var(--green); box-shadow:0 0 0 2px rgba(31,122,77,.2);}
+  .skinrow .sn{font-weight:700; font-size:15px; flex:1;}
+  .skinrow .sk{font-weight:900; font-variant-numeric:tabular-nums;}
+  .lb-row{display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:12px; margin-bottom:6px; background:#fff; border:1px solid var(--line);}
+  .lb-row.me{background:linear-gradient(90deg,#E7F7EE,#fff); border-color:var(--green); box-shadow:0 0 0 2px rgba(31,122,77,.25);}
+  .lb-rank{font-weight:900; width:34px; color:var(--muted); font-size:15px;}
+  .lb-name{font-weight:700; font-size:15px; flex:1;}
+  .lb-name .you{font-size:11px; font-weight:800; color:var(--green-d); display:block;}
+  .lb-pts{font-weight:900; font-size:17px; font-variant-numeric:tabular-nums;}
+  .lb-row.top1 .lb-rank{color:var(--gold);}
+  .recap-line{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-size:15px; gap:10px;}
+  .recap-line:last-child{border-bottom:none;}
+  .recap-line .rv{font-weight:800; font-variant-numeric:tabular-nums; white-space:nowrap;}
+  .rv.pos{color:var(--good);} .rv.neg{color:var(--bad);}
+  .recap-total{display:flex; justify-content:space-between; padding:12px 0 0; font-size:20px; font-weight:900;}
+  .step-dots{display:flex; gap:6px; justify-content:center; margin-bottom:14px;}
+  .step-dots i{width:8px; height:8px; border-radius:50%; background:var(--line); display:block;}
+  .step-dots i.on{background:var(--green);}
+  .hero-badge{display:inline-block; background:var(--gold); color:#3a2c00; font-weight:900; padding:6px 14px; border-radius:999px; font-size:13px; letter-spacing:.5px; text-transform:uppercase;}
+  .note{font-size:12px; color:var(--muted); margin-top:6px;}
+  .pmeta{font-size:12px; color:var(--muted);}
+  .jobtag{font-size:11px; font-weight:800; padding:2px 7px; border-radius:6px; background:#E7F7EE; color:var(--green-d);}
+  .infobox{background:#EEF6FB; border:1px solid #cfe4f0; border-radius:12px; padding:11px 13px; font-size:13px; color:#22506b; margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay-root"></div>
+
+<script>
+/* ===========================================================================
+   COURSE — PGA National (Champion). Par 71. Bear Trap = 15-16-17 (par 3-4-3).
+   =========================================================================== */
+const PARS=[4,5,3,4,4,4,3,4,4,4,4,4,4,5,3,4,3,4];
+const TOTAL_PAR=PARS.reduce((a,b)=>a+b,0);            // 71
+const TRAP=[14,15,16];                                 // holes 15,16,17 (0-based)
+const TRAP_PAR=TRAP.reduce((a,h)=>a+PARS[h],0);        // 10
+
+/* Deterministic PRNG so the scripted tournament is identical on every phone. */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);
+  t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+
+/* ===========================================================================
+   PLAYERS — 25 recognizable pros in 5 ranked groups of 5 (Formula A).
+   Grouping is loose tiering for the demo (not the exact live ranking).
+   [name, group, today] — today = this final round's score to par.
+   Scripted story: Ludvig Aberg (World #8-ish, Group 2) wins as an upset;
+   Jon Rahm (a Group-1 favorite) flames out.
+   =========================================================================== */
+const PDATA=[
+  ['Scottie Scheffler',1,-5],['Rory McIlroy',1,-4],['Jon Rahm',1,2],['Xander Schauffele',1,-3],['Viktor Hovland',1,-3],
+  ['Patrick Cantlay',2,-4],['Collin Morikawa',2,-2],['Ludvig Aberg',2,-7],['Justin Thomas',2,-2],['Max Homa',2,-1],
+  ['Tommy Fleetwood',3,-3],['Shane Lowry',3,-1],['Hideki Matsuyama',3,-2],['Jason Day',3,0],['Brian Harman',3,-1],
+  ['Tony Finau',4,-2],['Russell Henley',4,0],['Sahith Theegala',4,-1],['Sungjae Im',4,-1],['Rickie Fowler',4,1],
+  ['Cameron Young',5,0],['Adam Scott',5,-1],['Keegan Bradley',5,0],['Min Woo Lee',5,2],['Sepp Straka',5,1]
+];
+const CATS=[
+  {key:'drive', label:'Driving Distance', icon:'🚀'},
+  {key:'fwy',   label:'Fairways Hit',     icon:'🎯'},
+  {key:'gir',   label:'Greens in Reg',    icon:'⛳'},
+  {key:'putt',  label:'Fewest Putts',     icon:'🥅'}
+];
+
+/* "Recent" = last three finishes (cosmetic flavor, explained on the page). */
+function recentStr(seed){
+  const r=mulberry32(seed*31+9);
+  const a=()=> (r()<0.45?'T':'')+(1+Math.floor(r()*20));
+  return `Recent: ${a()} · ${a()} · ${a()}`;
+}
+
+let PLAYERS=[], BOARD=[], WINNER=null, TOP10=new Set();
+const TIER_COLOR=['#155C39','#1F7A4D','#2E9B63','#7FB99A','#B7D6C4'];
+
+function genCard(seed,today){
+  const rnd=mulberry32(seed+1000); const holes=PARS.slice(); let net=0;
+  const order=[...Array(18).keys()];
+  for(let i=order.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[order[i],order[j]]=[order[j],order[i]];}
+  let gi=0,guard=0;
+  while(net!==today && guard++<3000){
+    const h=order[gi%18]; gi++;
+    if(net>today){ const floor=PARS[h]-(PARS[h]===5?2:1); if(holes[h]>floor){holes[h]--;net--;} }
+    else { if(holes[h]<PARS[h]+2){holes[h]++;net++;} }
+  }
+  return holes;
+}
+/* Dedicated Bear-Trap result for per-hole drama (overrides 15-16-17). */
+function genTrap(seed,today){
+  const rnd=mulberry32(seed*13+777);
+  const skill=Math.max(-0.05, Math.min(0.12, (-today)*0.02));
+  const tp=[3,4,3]; const out=[];
+  for(let k=0;k<3;k++){
+    const r=rnd(); let d;
+    if(r<0.17+skill) d=-1; else if(r<0.63+skill) d=0; else if(r<0.87+skill) d=1; else d=2;
+    out.push(tp[k]+d);
+  }
+  return out;
+}
+function buildTournament(){
+  PLAYERS = PDATA.map((p,i)=>({id:i,name:p[0],grp:p[1],wr:i+1,today:p[2],recent:recentStr(i)}));
+  PLAYERS.forEach(p=>{
+    p.holes=genCard(p.id,p.today);
+    const tr=genTrap(p.id,p.today); TRAP.forEach((h,k)=>p.holes[h]=tr[k]);
+    p.trap=tr.reduce((a,b)=>a+b,0); p.under=Math.max(0,TRAP_PAR-p.trap);
+  });
+  CATS.forEach((c,ci)=>{
+    const vals=PLAYERS.map(p=>{const r=mulberry32(p.id*7+ci*131+5); return {id:p.id,v:(25-p.wr)*0.22 + r()*4};});
+    vals.sort((a,b)=>b.v-a.v);
+    vals.forEach((x,rank)=>{ PLAYERS[x.id]['rank_'+c.key]=rank+1; });
+  });
+  BOARD=[...PLAYERS].sort((a,b)=>a.today-b.today||a.wr-b.wr);
+  WINNER=BOARD[0]; TOP10=new Set(BOARD.slice(0,10).map(p=>p.id));
+}
+
+/* WHO BIRDIES NEXT? — scripted demo windows.
+   DEMO: fires 3 times in the compressed round. Each window shows 8 players
+   "on the course" now; the patron picks who birdies first. Correct = light
+   bonus, wrong = no penalty (an add-on, not a decider).
+   REAL APP (not built): fires every ~90 min (~12×/day); the 8 candidates are
+   players known to be on the course in that window from tee-time data, and
+   resolution depends on a live stats feed. */
+const WBN_POINTS = 5;
+const WBN = [
+  {when:'front', cands:[0,5,10,3,7,12,15,20], correct:7,  scorer:'Ludvig Aberg'},   // birdies on 6
+  {when:'mid',   cands:[1,6,11,18,4,9,13,21], correct:1,  scorer:'Rory McIlroy'},   // birdies on 11
+  {when:'back',  cands:[2,8,14,16,22,5,10,17], correct:8, scorer:'Justin Thomas'}   // birdies on 14
+];
+
+/* 12 bot opponents — fixed finals, tuned so a sensible patron lands upper third. */
+const BOTS=[
+  {name:"Fairway State of Mind", pts:138},{name:"Putt Pirates", pts:118},
+  {name:"The Sand Trappers", pts:103},{name:"Bogey Nights", pts:92},
+  {name:"Grip It & Sip It", pts:83},{name:"Mulligan Stew", pts:75},
+  {name:"Albatross Lounge", pts:67},{name:"Tee Time Bandits", pts:60},
+  {name:"The Yips", pts:53},{name:"Shankapotamus", pts:46},
+  {name:"Double Bogey Brigade", pts:39},{name:"Whiff Inc.", pts:32}
+];
+
+/* ===========================================================================
+   STATE
+   =========================================================================== */
+let S;
+function resetState(){
+  S = {
+    teamName:"",
+    roster:[null,null,null,null,null],   // one player id per group
+    winnerPick:null, winScore:null,      // tournament predictions
+    dailyBest:null, vsgChamp:null, bearTrap:null,   // today's specialists
+    wbnPts:0, wbn:[]                      // Who Birdies Next results
+  };
+}
+
+/* ===========================================================================
+   RENDER HELPERS
+   =========================================================================== */
+const app = document.getElementById('app');
+const overlayRoot = document.getElementById('overlay-root');
+function render(html){ app.innerHTML=html; app.scrollTop=0; const c=app.querySelector('.content'); if(c)c.scrollTop=0; }
+function $(s){ return app.querySelector(s); }
+const fmtPar = n => n===0 ? 'E' : (n>0?'+'+n:''+n);
+const rosterIds = ()=> S.roster.filter(x=>x!==null);
+const last = nm => nm.split(' ').slice(-1)[0];
+const pad = n => String(Math.max(0,n)).padStart(2,'0');
+
+/* ===========================================================================
+   1 — WELCOME
+   =========================================================================== */
+function showWelcome(){
+  resetState(); closeOverlay();
+  render(`
+   <div class="screen">
+    <div class="content center" style="display:flex;flex-direction:column;justify-content:center;">
+      <div style="margin-top:auto"></div>
+      <div class="hero-badge">Cognizant Classic · Live</div>
+      <h1 style="margin-top:18px;font-size:38px;">BEAT THE<br>CROWD</h1>
+      <div class="pill green" style="font-size:14px;margin:6px 0 14px;">⛳ Golf Edition</div>
+      <p style="font-size:18px;font-weight:600;color:var(--navy);">Out-predict everyone at PGA National.<br>Build a roster. Make your calls. Climb the board.</p>
+      <p class="muted">📶 Works even with WiFi off — everything runs on your phone.</p>
+      <div style="margin-bottom:auto"></div>
+    </div>
+    <div class="footer"><button class="btn green" onclick="showHowItWorks()">Play the demo →</button></div>
+   </div>`);
+}
+
+/* ===========================================================================
+   2 — HOW IT WORKS
+   =========================================================================== */
+function showHowItWorks(){
+  render(`
+   <div class="screen">
+    <div class="content">
+      <h2>How it works</h2>
+      <p>Two of your calls are about the <b>whole tournament</b>. Everything else is about <b>today's round only</b>. Here's the order you'll go through:</p>
+      <div class="card">
+        <h3>1 · Build a roster — 5 players</h3>
+        <p style="margin:0">Pick one golfer from each of five ranked groups. You can't stack all the favorites — that's the game.</p>
+      </div>
+      <div class="card">
+        <h3>2 · Tournament predictions</h3>
+        <p style="margin:0">Call the <b>tournament winner</b> and the <b>winning score</b>. These two ride the whole week.</p>
+      </div>
+      <div class="card">
+        <h3>3 · Today's specialists</h3>
+        <p style="margin:0">Three jobs, all about <b>today's round</b>: your <b>Low-Round Leader</b>, your <b>Virtual Skins</b> champion, and your <b>Bear Trap</b> player. One player can hold only one job.</p>
+      </div>
+      <div class="card">
+        <h3>4 · Watch the round</h3>
+        <p style="margin:0">Points pop in as today plays out. Call <b>Who Birdies Next?</b> a few times for bonus points, then sweat the <b>Bear Trap</b> (holes 15-16-17) and the Skins finish.</p>
+      </div>
+      <div class="infobox">🔁 <b>Missed-cut safety net:</b> if one of your players misses the cut, weekday players get a window on <b>Saturday</b> to swap in a replacement. (The real app handles this — this quick demo skips it.)</div>
+    </div>
+    <div class="footer"><button class="btn green" onclick="showTeamName()">Got it — let's play →</button></div>
+   </div>`);
+}
+
+/* ===========================================================================
+   3 — TEAM NAME
+   =========================================================================== */
+function showTeamName(){
+  render(`
+   <div class="screen">
+    <div class="content">
+      <div class="step-dots">${dots(0)}</div>
+      <h2>Name your team</h2>
+      <p class="muted">This is how you'll show up on the leaderboard for everyone to see. Make it a fun team name — <b>don't use your full or real name</b>.</p>
+      <input id="tn" type="text" maxlength="22" placeholder="e.g. Bogey & Co." value="${S.teamName}" autocomplete="off" />
+      <p class="note">Tip: the whole tent is about to see this.</p>
+    </div>
+    <div class="footer"><button class="btn" id="tnBtn" onclick="saveTeamName()">Continue →</button></div>
+   </div>`);
+  const inp=$('#tn'), btn=$('#tnBtn');
+  const sync=()=>{ btn.disabled=inp.value.trim().length===0; };
+  inp.addEventListener('input',sync); sync();
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&inp.value.trim()) saveTeamName(); });
+}
+function saveTeamName(){ const v=$('#tn').value.trim(); if(!v) return; S.teamName=v; showRoster(); }
+
+/* ===========================================================================
+   4 — BUILD ROSTER (one per group)
+   =========================================================================== */
+function showRoster(){
+  let body="";
+  for(let g=1; g<=5; g++){
+    const have = S.roster[g-1]!==null;
+    body += `<div class="grphdr"><span class="tier" style="background:${TIER_COLOR[g-1]}"></span>Group ${g} · World ${(g-1)*5+1}–${g*5} ${have?'✓':''}</div>`;
+    PLAYERS.filter(p=>p.grp===g).forEach(p=>{
+      const sel = S.roster[g-1]===p.id;
+      body += `<button class="pcard ${sel?'sel':''}" onclick="pickRoster(${g-1},${p.id})">
+        <span class="wr">#${p.wr}</span>
+        <span><span class="pname">${p.name}</span><br><span class="pmeta">${p.recent}</span></span>
+        <span class="form">${sel?'✓ picked':'tap to pick'}</span>
+      </button>`;
+    });
+  }
+  const have = rosterIds().length;
+  render(`
+   <div class="screen">
+    <div class="content">
+      <div class="step-dots">${dots(1)}</div>
+      <h2>Build your roster</h2>
+      <p class="muted" style="margin-bottom:6px">Pick one player from the 5 listed in each group.</p>
+      <div class="infobox">“#” is the player's <b>world ranking</b>. “Recent” is their <b>last three finishes</b> (e.g. <b>T4</b> = tied for 4th) — lower is better.</div>
+      <div class="countbar">${have}/5 picked &nbsp;·&nbsp; one golfer per group</div>
+      ${body}
+      <p class="note" style="margin-top:10px">In the full game you can also bet on <b>“The Field”</b> (any non-listed player) as your winner on Thursday/Friday. This quick demo doesn't use it.</p>
+    </div>
+    <div class="footer">
+      <button class="btn" id="rBtn" onclick="saveRoster()" ${have===5?'':'disabled'}>
+        ${have===5?'Make predictions →':`Pick ${5-have} more`}</button>
+    </div>
+   </div>`);
+}
+function pickRoster(gi,id){
+  S.roster[gi]=id;
+  const c=$('.content'); const sc=c?c.scrollTop:0;
+  showRoster();
+  const c2=$('.content'); if(c2)c2.scrollTop=sc;
+}
+function saveRoster(){ if(rosterIds().length!==5) return; showPredictions(); }
+
+/* ===========================================================================
+   5 — TOURNAMENT PREDICTIONS (winner + winning score only)
+   =========================================================================== */
+function showPredictions(){
+  const opts = rosterIds().map(id=>{
+    const p=PLAYERS[id]; const sel=S.winnerPick===id;
+    return `<button class="choice ${sel?'sel':''}" onclick="pickWinner(${id})">
+      <span><span class="wr" style="display:inline-flex;width:26px;height:26px;font-size:11px;vertical-align:middle">#${p.wr}</span> &nbsp;${p.name}</span>${sel?'✓':''}</button>`;
+  }).join('');
+  const wsVal = (S.winScore!==null && !isNaN(S.winScore)) ? S.winScore : '-';
+  render(`
+   <div class="screen">
+    <div class="content">
+      <div class="step-dots">${dots(2)}</div>
+      <h2>Tournament predictions</h2>
+      <p class="muted">These two calls ride the <b>whole tournament</b>.</p>
+
+      <label>🏆 Tournament winner</label>
+      <p class="note" style="margin-top:0">Which of your five lifts the trophy?</p>
+      <div class="choices" style="margin-bottom:18px">${opts}</div>
+
+      <label>🎯 Winning score (to par)</label>
+      <p class="note" style="margin-top:0">What does the winner finish at? Winners almost always finish under par, so we've started you with a “−”. Closer = more points.</p>
+      <input id="ws" type="text" inputmode="numeric" maxlength="4" placeholder="-6" value="${wsVal}" />
+    </div>
+    <div class="footer"><button class="btn" id="pBtn" onclick="savePredictions()">Assign specialists →</button></div>
+   </div>`);
+  const wsEl=$('#ws');
+  // keep a leading minus by default; parse on input
+  wsEl.addEventListener('input', ()=>{ parseWs(); syncPred(); });
+  wsEl.addEventListener('focus', ()=>{ if(wsEl.value==='') wsEl.value='-'; });
+  parseWs(); syncPred();
+}
+function parseWs(){ const el=$('#ws'); if(!el) return; const v=el.value.trim(); const n=parseInt(v,10); S.winScore = (v===''||v==='-'||isNaN(n)) ? null : n; }
+function pickWinner(id){ parseWs(); S.winnerPick=id; showPredictions(); }
+function syncPred(){ const b=$('#pBtn'); if(b) b.disabled = !(S.winnerPick!==null && S.winScore!==null); }
+function savePredictions(){ parseWs(); if(S.winnerPick===null||S.winScore===null) return; showSpecialists(); }
+
+/* ===========================================================================
+   6 — ASSIGN TODAY'S SPECIALISTS (low-round + skins + bear trap)
+   =========================================================================== */
+function showSpecialists(){
+  // a player taken by a DIFFERENT job is locked out (one player, one job)
+  function jobOf(id){ if(id===S.dailyBest)return'⛳ Low-Round'; if(id===S.vsgChamp)return'🎰 Skins'; if(id===S.bearTrap)return'🐻 Bear Trap'; return null; }
+  function section(curr, fn){
+    return rosterIds().map(id=>{
+      const p=PLAYERS[id]; const sel=curr===id; const j=jobOf(id);
+      const lockedElsewhere = j && !sel;
+      return `<button class="pcard ${sel?'sel':''} ${lockedElsewhere?'dim':''}" ${lockedElsewhere?'':`onclick="${fn}(${id})"`}>
+        <span class="wr">#${p.wr}</span>
+        <span><span class="pname">${p.name}</span><br><span class="pmeta">${lockedElsewhere?'taken · '+j:p.recent}</span></span>
+        <span class="form">${sel?'✓':(lockedElsewhere?'taken':'pick')}</span>
+      </button>`;
+    }).join('');
+  }
+  render(`
+   <div class="screen">
+    <div class="content">
+      <div class="step-dots">${dots(3)}</div>
+      <h2>Assign today's specialists</h2>
+      <p class="muted">Three jobs for <b>today's round</b>. You can choose each player only once — pick a taken player and they lock out everywhere else. Spread your bets.</p>
+
+      <label>⛳ Low-Round Leader <span class="jobtag">Job 1 of 3</span></label>
+      <p class="note" style="margin-top:0">Which of your five shoots the lowest round today?</p>
+      <div class="choices" style="margin-bottom:18px">${section(S.dailyBest,'pickDaily')}</div>
+
+      <label>🎰 Virtual Skins champion <span class="jobtag">Job 2 of 3</span></label>
+      <p class="note" style="margin-top:0">Who wins the most holes in your private 5-player skins game?</p>
+      <div class="choices" style="margin-bottom:18px">${section(S.vsgChamp,'pickChamp')}</div>
+
+      <label>🐻 Bear Trap player <span class="jobtag">Job 3 of 3</span></label>
+      <p class="note" style="margin-top:0">Who do you trust through 15-16-17?</p>
+      <div class="choices">${section(S.bearTrap,'pickTrap')}</div>
+    </div>
+    <div class="footer">
+      <button class="btn" id="sBtn" onclick="showConfirm()" ${(S.dailyBest!==null&&S.vsgChamp!==null&&S.bearTrap!==null)?'':'disabled'}>Review picks →</button>
+    </div>
+   </div>`);
+}
+function reSpec(){ const c=$('.content'); const sc=c?c.scrollTop:0; showSpecialists(); const c2=$('.content'); if(c2)c2.scrollTop=sc; }
+function pickDaily(id){ if(id===S.vsgChamp||id===S.bearTrap) return; S.dailyBest=id; reSpec(); }
+function pickChamp(id){ if(id===S.dailyBest||id===S.bearTrap) return; S.vsgChamp=id; reSpec(); }
+function pickTrap(id){ if(id===S.dailyBest||id===S.vsgChamp) return; S.bearTrap=id; reSpec(); }
+
+/* ===========================================================================
+   7 — CONFIRM
+   =========================================================================== */
+function showConfirm(){
+  const rosterHtml = rosterIds().map(id=>{
+    const p=PLAYERS[id]; const jobs=[];
+    if(id===S.dailyBest) jobs.push('⛳ Low');
+    if(id===S.vsgChamp)  jobs.push('🎰 Skins');
+    if(id===S.bearTrap)  jobs.push('🐻 Trap');
+    if(id===S.winnerPick) jobs.push('🏆 Winner');
+    return `<div class="recap-line"><span><span class="wr" style="display:inline-flex;width:24px;height:24px;font-size:10px;vertical-align:middle">#${p.wr}</span> ${p.name}</span><span class="rv" style="font-size:12px;color:var(--muted)">${jobs.join(' · ')||'roster'}</span></div>`;
+  }).join('');
+  render(`
+   <div class="screen">
+    <div class="content">
+      <div class="step-dots">${dots(4)}</div>
+      <h2>Lock it in</h2>
+      <div class="card">
+        <div class="recap-line"><span>🏆 Winner pick</span><span class="rv">${PLAYERS[S.winnerPick].name}</span></div>
+        <div class="recap-line"><span>🎯 Winning score</span><span class="rv">${fmtPar(S.winScore)}</span></div>
+        <div class="recap-line"><span>⛳ Low-Round Leader</span><span class="rv">${PLAYERS[S.dailyBest].name}</span></div>
+        <div class="recap-line"><span>🎰 Skins champion</span><span class="rv">${PLAYERS[S.vsgChamp].name}</span></div>
+        <div class="recap-line"><span>🐻 Bear Trap</span><span class="rv">${PLAYERS[S.bearTrap].name}</span></div>
+      </div>
+      <h3>Your roster</h3>
+      <div class="card" style="padding:6px 16px">${rosterHtml}</div>
+      <p class="note">Picks lock when the round begins. Sunday at PGA National — here we go.</p>
+    </div>
+    <div class="footer"><button class="btn green" onclick="startRound()">⛳ Start the round →</button></div>
+   </div>`);
+}
+
+/* ===========================================================================
+   8 — LIVE ROUND  (no shot-by-shot play-by-play; points + WBN + Bear Trap)
+   =========================================================================== */
+let runTotal=0, feedHtml=[], beatTimer=null, RESULT=null, BEATS=null, BEAT_I=0;
+
+function computeResult(){
+  const ids=rosterIds();
+  const winnerHit = S.winnerPick===WINNER.id;
+  const winnerPP = winnerHit ? 25 : 0;
+  const err=Math.abs(S.winScore-WINNER.today);
+  const scorePP = Math.round((Math.max(0,16-2.5*err)+(err===0?5:0))*10)/10;
+  const lowOwn = ids.slice().sort((a,b)=>PLAYERS[a].today-PLAYERS[b].today||PLAYERS[a].wr-PLAYERS[b].wr)[0];
+  const dailyHit = S.dailyBest===lowOwn;
+  const dailyPP = dailyHit ? 14 : 0;
+  const top10ids = ids.filter(id=>TOP10.has(id));
+  const top10PP = top10ids.length*9;
+  const fpHits=[];
+  CATS.forEach(c=>{
+    let bestId=ids[0];
+    ids.forEach(id=>{ if(PLAYERS[id]['rank_'+c.key] < PLAYERS[bestId]['rank_'+c.key]) bestId=id; });
+    if(PLAYERS[bestId]['rank_'+c.key] <= 5) fpHits.push({cat:c, id:bestId, rank:PLAYERS[bestId]['rank_'+c.key]});
+  });
+  const fpTotal = fpHits.length*11;
+  const skins = ids.map(()=>0);
+  for(let h=0;h<18;h++){
+    let mn=99, who=-1, tie=false;
+    ids.forEach((id,idx)=>{ const s=PLAYERS[id].holes[h]; if(s<mn){mn=s;who=idx;tie=false;} else if(s===mn) tie=true; });
+    if(!tie && who>=0) skins[who]++;
+  }
+  const champIdx = ids.indexOf(S.vsgChamp);
+  const champSkins = skins[champIdx];
+  const ord = ids.map((id,i)=>({id,s:skins[i]})).sort((a,b)=>b.s-a.s);
+  const SCALE=[16,11,7,3,0];
+  const tiedPos=[]; ord.forEach((o,pos)=>{ if(o.s===champSkins) tiedPos.push(pos); });
+  const champFinish = tiedPos[0]+1;
+  const vsp = Math.round((tiedPos.reduce((a,pos)=>a+SCALE[pos],0)/tiedPos.length)*10)/10;
+  const bt=PLAYERS[S.bearTrap];
+  let btp=0, btpKind='';
+  if(bt.under>0){ btp=bt.under*6; btpKind='under'; }
+  else if(bt.trap<=TRAP_PAR){ btp=4; btpKind='tamed'; }
+  else { btp=0; btpKind='bit'; }
+  const preTotal=Math.round(winnerPP+scorePP+dailyPP+top10PP+fpTotal+vsp+btp);
+  return {ids, winnerHit, winnerPP, err, scorePP, lowOwn, dailyHit, dailyPP,
+          top10ids, top10PP, fpHits, fpTotal, skins, champIdx, champSkins, champFinish, vsp,
+          bt, btp, btpKind, preTotal};
+}
+
+function startRound(){
+  RESULT=computeResult(); S.wbnPts=0; S.wbn=[];
+  runTotal=0; feedHtml=[]; BEAT_I=0;
+  renderRound();
+  BEATS=buildBeats();
+  setTimeout(()=>runBeats(), 600);
+}
+function renderRound(){
+  render(`
+   <div class="screen">
+    <div class="content">
+      <div class="scoreboard">
+        <div class="sb-row">
+          <div><div class="sb-lab">${esc(S.teamName)} · your points</div><div class="sb-pts" id="sbPts">${runTotal}</div></div>
+          <div class="sb-right"><div class="sb-hole" id="sbHole">Round underway</div><div style="opacity:.6;font-size:11px;margin-top:4px">LIVE · PGA NATIONAL</div></div>
+        </div>
+      </div>
+      <div class="feed" id="feed">${feedHtml.join('')}</div>
+    </div>
+    <div class="footer" style="background:transparent"><button class="btn ghost sm" onclick="skipToResults()">Skip to results ▸</button></div>
+   </div>`);
+}
+function setHole(t){ const h=$('#sbHole'); if(h) h.textContent=t; }
+function pushFeed(html){ feedHtml.unshift(html); if(feedHtml.length>11) feedHtml=feedHtml.slice(0,11); const f=$('#feed'); if(f) f.innerHTML=feedHtml.join(''); }
+function bump(pts){ runTotal+=pts; const el=$('#sbPts'); if(el){ el.textContent=Math.round(runTotal); el.style.animation='pop .4s'; setTimeout(()=>{if(el)el.style.animation='';},420); } }
+function addToast(html, pts, cls){ pushFeed(`<div class="toast ${cls||''}">${html}</div>`); if(pts) bump(pts); }
+function statusLine(txt){ pushFeed(`<div class="play"><span class="ptag">Clubhouse update</span><br>${txt}</div>`); }
+
+/* Ordered beats. Most auto-advance; WBN beats pause for the pick window. */
+function buildBeats(){
+  const R=RESULT, beats=[];
+  const push=(fn,delay,overlay)=>beats.push({fn,delay,overlay});
+
+  push(()=>setHole('Front nine'),300);
+  push(()=>statusLine(`Final round at PGA National. Your five are out on the course — points post as they play.`),1700);
+
+  // WBN window #1
+  push(()=>{ stopBeats(); openWBN(0, ()=>runBeats()); }, 700, true);
+
+  // Fantasy (Cap 2) reveals
+  push(()=>setHole('Stat watch'),300);
+  if(R.fpHits.length===0) push(()=>statusLine(`Stats are tight — none of your five lead a category yet.`),1500);
+  else R.fpHits.forEach(h=> push(()=>addToast(`${h.cat.icon} <b>Fantasy</b> — ${PLAYERS[h.id].name} is top-5 in ${h.cat.label} (Cap-2). <b>+11</b>`, 11, 'good'),1600));
+
+  // Top-10 reveals
+  push(()=>setHole('Leaderboard'),300);
+  if(R.top10ids.length===0) push(()=>statusLine(`None of your five are in the top 10 — tough board today.`),1500);
+  else R.top10ids.forEach(id=> push(()=>addToast(`📈 <b>${PLAYERS[id].name}</b> is inside the top 10. <b>+9</b>`, 9, 'good'),1400));
+
+  // WBN window #2
+  push(()=>{ stopBeats(); openWBN(1, ()=>runBeats()); }, 600, true);
+
+  // Back nine + WBN window #3
+  push(()=>setHole('Back nine'),300);
+  push(()=>statusLine(`Onto the back nine. The Bear Trap is waiting at 15.`),1500);
+  push(()=>{ stopBeats(); openWBN(2, ()=>runBeats()); }, 600, true);
+
+  // Bear Trap — fires per hole (15, 16, 17), escalating
+  push(()=>setHole('🐻 The Bear Trap'),300);
+  push(()=>statusLine(`Your Bear Trap player <b>${R.bt.name}</b> steps to the 15th tee…`),1500);
+  TRAP.forEach((h,k)=> push(()=>bearTrapHole(k),2100));
+  push(()=>{
+    if(R.btp>0) addToast(`🐻 Through the Trap: ${R.bt.name} at ${fmtPar(R.bt.trap-TRAP_PAR)} on the stretch. <b>+${R.btp}</b>`, R.btp, 'good');
+    else addToast(`🐻 The Bear Trap bites — ${R.bt.name} gives shots back. +0`, 0, 'bad');
+  },1800);
+
+  // Virtual Skins resolve (end of round)
+  push(()=>{ stopBeats(); openSkins(()=>runBeats()); }, 700, true);
+
+  // Clubhouse — tournament predictions resolve
+  push(()=>setHole('Clubhouse'),300);
+  push(()=>{ if(R.dailyHit) addToast(`⛳ <b>Low round nailed</b> — ${PLAYERS[S.dailyBest].name} was your lowest. <b>+14</b>`, R.dailyPP, 'good');
+             else addToast(`⛳ Low round: ${PLAYERS[R.lowOwn].name} edged your pick. +0`, 0, ''); },1700);
+  push(()=>{ if(R.scorePP>0) addToast(`🎯 Winning score ${fmtPar(WINNER.today)} — you said ${fmtPar(S.winScore)} (off ${R.err}). <b>+${R.scorePP}</b>`, R.scorePP, 'good');
+             else addToast(`🎯 Winning score ${fmtPar(WINNER.today)} — you said ${fmtPar(S.winScore)}. Missed. +0`, 0, ''); },1800);
+  push(()=>{ if(R.winnerHit) addToast(`🏆 <b>Called the winner!</b> ${WINNER.name} takes it. <b>+25</b>`, R.winnerPP, 'good');
+             else addToast(`🏆 ${WINNER.name} (World #${WINNER.wr}) wins it — not your pick. +0`, 0, ''); },2000);
+
+  push(()=>{ setHole('Final'); setTimeout(showResults, 900); },400);
+  return beats;
+}
+function runBeats(){
+  if(!BEATS || BEAT_I>=BEATS.length) return;
+  const b=BEATS[BEAT_I]; BEAT_I++;
+  b.fn();
+  if(b.overlay) return;                 // overlay beats resume via their callback
+  beatTimer=setTimeout(runBeats, b.delay);
+}
+function stopBeats(){ if(beatTimer){ clearTimeout(beatTimer); beatTimer=null; } }
+function skipToResults(){ stopBeats(); closeOverlay(); showResults(); }
+
+/* ----- Bear Trap, one hole at a time ----- */
+function bearTrapHole(k){
+  const p=RESULT.bt; const h=TRAP[k]; const s=p.holes[h]; const d=s-PARS[h];
+  const num=['15th','16th','17th'][k];
+  const VERDICT={
+    '-1':['Birdie at the 15th over the water — fearless start!','Birdie at the 16th — attacking the Trap!','Birdie on the island 17th — ice in the veins!'],
+    '0' :['Par on the 15th — takes the water out of play.','Steady par on the 16th — no drama.','Par on the 17th — walks off the island clean.'],
+    '1' :['Misses the green on the 15th — bogey.','Finds the rough on the 16th — bogey drops one.','Tentative on the 17th — bogey.'],
+    '2' :['In the water on the 15th! Double bogey.','Trouble on the 16th — double bogey.','Splash on the island 17th — double. Ouch.']
+  };
+  const key = d<0?'-1':(d===0?'0':(d===1?'1':'2'));
+  const verdict = VERDICT[key][k];
+  const cls = d<0?'under':(d>0?'over':'even');
+  pushFeed(`<div class="play trap"><span class="ptag">🐻 Bear Trap · ${num} · Par ${PARS[h]}</span><br><span class="chip ${cls}">${s}</span>${verdict}</div>`);
+}
+
+/* ----- Who Birdies Next? pick window (mirrors football WSN UX) ----- */
+let wbnTimer=null;
+function openWBN(idx, done){
+  const w=WBN[idx]; let pick=null, secs=12;
+  function draw(){
+    overlay(`
+      <h2>🐦 Who Birdies Next? <span class="countdown" id="wbnCd">0:${pad(secs)}</span></h2>
+      <p class="muted">These eight are on the course right now. Tap who you think makes the <b>next birdie</b>. Right = <b>+${WBN_POINTS}</b>, wrong = no penalty.</p>
+      <div class="choices">
+        ${w.cands.map(id=>`<button class="choice ${pick===id?'sel':''}" onclick="window._wbnPick(${id})"><span>${PLAYERS[id].name} <span class="pmeta">· #${PLAYERS[id].wr}</span></span>${pick===id?'✓':''}</button>`).join('')}
+      </div>
+      <button class="btn green" style="margin-top:12px" id="wbnLock" onclick="window._wbnSubmit()" ${pick!=null?'':'disabled'}>Lock it in</button>
+      <button class="btn ghost sm" style="margin-top:8px" onclick="window._wbnPass()">Pass</button>
+    `);
+  }
+  window._wbnPick=(id)=>{ pick=id; draw(); };
+  window._wbnPass=()=>finish(false);
+  window._wbnSubmit=()=>finish(true);
+  function finish(submit){
+    clearInterval(wbnTimer); wbnTimer=null;
+    const answered = submit && pick!=null;
+    const correct = answered && pick===w.correct;
+    S.wbn[idx]={answered, correct, pick};
+    if(correct) S.wbnPts+=WBN_POINTS;
+    closeOverlay();
+    const scorer=PLAYERS[w.correct].name;
+    if(correct) addToast(`🐦 Who Birdies Next — ✓ ${scorer} birdied first! <b>+${WBN_POINTS}</b>`, WBN_POINTS, 'good');
+    else if(answered) addToast(`🐦 Who Birdies Next — ${scorer} got there first. No penalty.`, 0, '');
+    else addToast(`🐦 Who Birdies Next — passed. ${scorer} birdied first.`, 0, '');
+    done();
+  }
+  draw();
+  wbnTimer=setInterval(()=>{
+    secs--; const cd=document.getElementById('wbnCd'); if(cd) cd.textContent=`0:${pad(secs)}`;
+    if(secs<=0) finish(pick!=null);
+  },1000);
+}
+
+/* ----- Virtual Skins resolve (end of round) ----- */
+function openSkins(done){
+  const R=RESULT;
+  const ord = R.ids.map((id,i)=>({id, s:R.skins[i]})).sort((a,b)=>b.s-a.s);
+  const rows = ord.map((o,pos)=>{
+    const champ = o.id===S.vsgChamp;
+    return `<div class="skinrow ${champ?'champ':''}"><span class="lb-rank">${pos+1}</span>
+      <span class="sn">${PLAYERS[o.id].name}${champ?' <span class="jobtag">your champ</span>':''}</span>
+      <span class="sk">${o.s} 🎰</span></div>`;
+  }).join('');
+  const ordn=['1st','2nd','3rd','4th','5th'][R.champFinish-1]||R.champFinish+'th';
+  overlay(`
+    <h2>🎰 Virtual Skins Game</h2>
+    <p class="muted">Hole-by-hole among your own five. Lowest score wins the hole; ties carry no skin. Your champion: <b>${PLAYERS[S.vsgChamp].name}</b>.</p>
+    <div style="margin:12px 0">${rows}</div>
+    <div class="toast good" style="margin-bottom:16px">🎰 ${PLAYERS[S.vsgChamp].name} finished <b>${ordn}</b> with ${R.champSkins} skin${R.champSkins===1?'':'s'}. <b>+${R.vsp} VSP</b></div>
+    <button class="btn green" onclick="window._skDone()">Onward ▸</button>
+  `);
+  window._skDone=()=>{ closeOverlay(); if(R.vsp) bump(R.vsp); done(); };
+}
+
+/* ===========================================================================
+   9 — RESULTS / LEADERBOARD + SCORECARD
+   =========================================================================== */
+function showResults(){
+  stopBeats(); closeOverlay();
+  const R = RESULT || computeResult();
+  const total = R.preTotal + S.wbnPts;
+  const wbnHits = S.wbn.filter(w=>w&&w.correct).length;
+  const rows = BOTS.map(b=>({name:b.name, pts:b.pts, me:false}))
+    .concat([{name:S.teamName, pts:total, me:true}])
+    .sort((a,b)=> b.pts - a.pts);
+  const rank = rows.findIndex(r=>r.me)+1;
+  const n = rows.length;
+  const lbHtml = rows.map((r,i)=>`
+    <div class="lb-row ${r.me?'me':''} ${i===0?'top1':''}">
+      <span class="lb-rank">${i===0?'🥇':(i===1?'🥈':(i===2?'🥉':'#'+(i+1)))}</span>
+      <span class="lb-name">${esc(r.name)}${r.me?'<span class="you">YOU</span>':''}</span>
+      <span class="lb-pts">${Math.round(r.pts)}</span>
+    </div>`).join('');
+  const rv=(x)=>`<span class="rv ${x>0?'pos':(x<0?'neg':'')}">${x>0?'+':''}${Number.isInteger(x)?x:x.toFixed(1)}</span>`;
+  const place = rank===1 ? "🏆 1st — you beat the crowd!" :
+                rank<=Math.ceil(n/3) ? `Top third — #${rank} of ${n}. Great round!` :
+                rank<=Math.ceil(n*2/3) ? `Middle of the pack — #${rank} of ${n}.` :
+                `#${rank} of ${n} — there's always the back nine.`;
+  const fpDetail = R.fpHits.length ? R.fpHits.map(h=>h.cat.icon).join('') : '—';
+  render(`
+   <div class="screen">
+    <div class="content">
+      <div class="center" style="margin-bottom:6px"><div class="hero-badge">Final · ${WINNER.name} wins (${fmtPar(WINNER.today)})</div></div>
+      <h2 class="center" style="margin-top:10px">${place}</h2>
+      <h3 style="margin-top:8px">Leaderboard</h3>
+      ${lbHtml}
+      <h3 style="margin-top:18px">Your scorecard — ${esc(S.teamName)}</h3>
+      <div class="card">
+        <div class="recap-line"><span>🏆 Winner <span class="pmeta">(${R.winnerHit?'✓ '+WINNER.name:'missed'})</span></span>${rv(R.winnerPP)}</div>
+        <div class="recap-line"><span>🎯 Winning score <span class="pmeta">(said ${fmtPar(S.winScore)}, was ${fmtPar(WINNER.today)})</span></span>${rv(R.scorePP)}</div>
+        <div class="recap-line"><span>⛳ Low round <span class="pmeta">(${R.dailyHit?'✓':'miss'})</span></span>${rv(R.dailyPP)}</div>
+        <div class="recap-line"><span>📈 Top-10 finishes <span class="pmeta">(${R.top10ids.length} × 9)</span></span>${rv(R.top10PP)}</div>
+        <div class="recap-line"><span>⛳ Fantasy — Cap 2 <span class="pmeta">(${fpDetail})</span></span>${rv(R.fpTotal)}</div>
+        <div class="recap-line"><span>🎰 Virtual Skins <span class="pmeta">(${last(PLAYERS[S.vsgChamp].name)}, ${R.champSkins} skins)</span></span>${rv(R.vsp)}</div>
+        <div class="recap-line"><span>🐻 Bear Trap <span class="pmeta">(${last(PLAYERS[S.bearTrap].name)}, ${fmtPar(R.bt.trap-TRAP_PAR)} on 15-17)</span></span>${rv(R.btp)}</div>
+        <div class="recap-line"><span>🐦 Who Birdies Next <span class="pmeta">(${wbnHits}/${WBN.length} hit)</span></span>${rv(S.wbnPts)}</div>
+        <div class="recap-total"><span>TOTAL</span><span>${total}</span></div>
+      </div>
+      <p class="note center">Same round, every phone — your picks made this score. That's Beat the Crowd.</p>
+    </div>
+    <div class="footer"><button class="btn green" onclick="showWelcome()">Play again ↺</button></div>
+   </div>`);
+}
+
+/* ===========================================================================
+   OVERLAY PLUMBING + misc
+   =========================================================================== */
+function overlay(innerHtml){ document.body.classList.add('lock'); overlayRoot.innerHTML=`<div class="overlay"><div class="sheet">${innerHtml}</div></div>`; }
+function closeOverlay(){ document.body.classList.remove('lock'); overlayRoot.innerHTML=""; }
+function dots(active){ let s=""; for(let i=0;i<5;i++) s+=`<i class="${i===active?'on':''}"></i>`; return s; }
+function esc(s){ return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* BOOT */
+buildTournament();
+showWelcome();
+</script>
+</body>
+</html>
