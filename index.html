@@ -205,7 +205,7 @@ function buildTournament(){
 }
 
 /* WHO BIRDIES NEXT? — scripted demo windows.
-   DEMO: fires 3 times in the compressed round. Each window shows 8 players
+   DEMO: fires 3 times in the compressed round. Each window shows 5 players
    "on the course" now; the patron picks who birdies first. Correct = light
    bonus, wrong = no penalty (an add-on, not a decider).
    REAL APP (not built): fires every ~90 min (~12×/day); the 8 candidates are
@@ -213,9 +213,9 @@ function buildTournament(){
    resolution depends on a live stats feed. */
 const WBN_POINTS = 5;
 const WBN = [
-  {when:'front', cands:[0,5,10,3,7,12,15,20], correct:7,  scorer:'Ludvig Aberg'},   // birdies on 6
-  {when:'mid',   cands:[1,6,11,18,4,9,13,21], correct:1,  scorer:'Rory McIlroy'},   // birdies on 11
-  {when:'back',  cands:[2,8,14,16,22,5,10,17], correct:8, scorer:'Justin Thomas'}   // birdies on 14
+  {when:'front', cands:[0,5,10,3,7], correct:7,  scorer:'Ludvig Aberg'},   // birdies on 6
+  {when:'mid',   cands:[1,6,11,18,4], correct:1,  scorer:'Rory McIlroy'},   // birdies on 11
+  {when:'back',  cands:[2,8,14,16,22], correct:8, scorer:'Justin Thomas'}   // birdies on 14
 ];
 
 /* 12 bot opponents — fixed finals, tuned so a sensible patron lands upper third. */
@@ -647,7 +647,7 @@ function openWBN(idx, done){
   function draw(){
     overlay(`
       <h2>🐦 Who Birdies Next? <span class="countdown" id="wbnCd">0:${pad(secs)}</span></h2>
-      <p class="muted">These eight are on the course right now. Tap who you think makes the <b>next birdie</b>. Right = <b>+${WBN_POINTS}</b>, wrong = no penalty.</p>
+      <p class="muted">These five are on the course right now. Tap who you think makes the <b>next birdie</b>. Right = <b>+${WBN_POINTS}</b>, wrong = no penalty.</p>
       <div class="choices">
         ${w.cands.map(id=>`<button class="choice ${pick===id?'sel':''}" onclick="window._wbnPick(${id})"><span>${PLAYERS[id].name} <span class="pmeta">· #${PLAYERS[id].wr}</span></span>${pick===id?'✓':''}</button>`).join('')}
       </div>
@@ -744,6 +744,10 @@ function showResults(){
         <div class="recap-total"><span>TOTAL</span><span>${total}</span></div>
       </div>
       <p class="note center">Same round, every phone — your picks made this score. That's Beat the Crowd.</p>
+      <div style="margin-top:18px;text-align:center">
+        <p class="muted" style="margin-bottom:10px">Enjoyed it? Tell us what you thought — 30 seconds.</p>
+        <a class="btn gold" href="https://forms.gle/NXSEWjiFr5kP7jjn9" target="_blank" rel="noopener" style="text-decoration:none">Tell us what you thought →</a>
+      </div>
     </div>
     <div class="footer"><button class="btn green" onclick="showWelcome()">Play again ↺</button></div>
    </div>`);
