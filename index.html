@@ -729,6 +729,10 @@ function showResults(){
     <div class="content">
       <div class="center" style="margin-bottom:6px"><div class="hero-badge">Final · ${WINNER.name} wins (${fmtPar(WINNER.today)})</div></div>
       <h2 class="center" style="margin-top:10px">${place}</h2>
+      <div style="margin:14px 0 6px;text-align:center">
+        <p class="muted" style="margin-bottom:10px">Enjoyed it? Tell us what you thought — 30 seconds.</p>
+        <a class="btn gold" href="https://forms.gle/NXSEWjiFr5kP7jjn9" target="_blank" rel="noopener" style="text-decoration:none">Tell us what you thought →</a>
+      </div>
       <h3 style="margin-top:8px">Leaderboard</h3>
       ${lbHtml}
       <h3 style="margin-top:18px">Your scorecard — ${esc(S.teamName)}</h3>
@@ -744,10 +748,6 @@ function showResults(){
         <div class="recap-total"><span>TOTAL</span><span>${total}</span></div>
       </div>
       <p class="note center">Same round, every phone — your picks made this score. That's Beat the Crowd.</p>
-      <div style="margin-top:18px;text-align:center">
-        <p class="muted" style="margin-bottom:10px">Enjoyed it? Tell us what you thought — 30 seconds.</p>
-        <a class="btn gold" href="https://forms.gle/NXSEWjiFr5kP7jjn9" target="_blank" rel="noopener" style="text-decoration:none">Tell us what you thought →</a>
-      </div>
     </div>
     <div class="footer"><button class="btn green" onclick="showWelcome()">Play again ↺</button></div>
    </div>`);
